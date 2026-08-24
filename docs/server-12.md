@@ -14,9 +14,9 @@ curl -fsS http://127.0.0.1:8082/healthz
 tail -n 50 logs/server.log
 ```
 
-`start.sh` 会在启动时按实时空闲显存选择 GPU，并设置 `CUDA_VISIBLE_DEVICES`。不要固定写死 GPU 编号，也不要启动多个 Uvicorn worker。IndexTTS 模型加载发生在第一次试听/生成时，服务健康检查本身不会占用完整模型显存。
+`start.sh` 会读取实时空闲显存：GPU 3 达到最低阈值时固定优先；GPU 3 不存在或低于阈值时，才从其他卡中选择空闲显存最多的一张，然后设置 `CUDA_VISIBLE_DEVICES`。不要启动多个 Uvicorn worker。IndexTTS 模型加载发生在第一次试听/生成时，服务健康检查本身不会占用完整模型显存。
 
-常用启动变量：`PORT`（默认 8082）、`MIN_FREE_MIB`（默认 8192）、`INDEXTTS_QWEN_EMO`（默认 1），以及用于覆盖安装位置的 `INDEXTTS_PYTHON`、`INDEXTTS_SOURCE_DIR`、`INDEXTTS_MODEL_DIR`、`INDEXTTS_REFERENCE_DIR`、`INDEXTTS_WORKBENCH_FFMPEG`。`INDEXTTS_WORKBENCH_TASKS` 和 `INDEXTTS_WORKBENCH_VOICES` 可改变私有运行目录；验收故障注入变量 `INDEXTTS_WORKBENCH_FAIL_INDEX_ONCE` 不应出现在日常启动命令中。
+常用启动变量：`PORT`（默认 8082）、`MIN_FREE_MIB`（默认 8192）、`PREFERRED_GPU_ID`（默认 3）、`INDEXTTS_QWEN_EMO`（默认 1），以及用于覆盖安装位置的 `INDEXTTS_PYTHON`、`INDEXTTS_SOURCE_DIR`、`INDEXTTS_MODEL_DIR`、`INDEXTTS_REFERENCE_DIR`、`INDEXTTS_WORKBENCH_FFMPEG`。`INDEXTTS_WORKBENCH_TASKS` 和 `INDEXTTS_WORKBENCH_VOICES` 可改变私有运行目录；验收故障注入变量 `INDEXTTS_WORKBENCH_FAIL_INDEX_ONCE` 不应出现在日常启动命令中。
 
 本机访问：
 
@@ -53,7 +53,7 @@ curl -fsS http://127.0.0.1:8082/api/voices
 curl -fsS http://127.0.0.1:8082/api/jobs
 ```
 
-2026-08-24 已完成真实验收：短试听生成 5.06 秒 WAV；7,000 字任务 `20260824-155344-bcc3e0d8` 完成 50/50 片段、零失败、`text_integrity=true`，最终音频 1,256.456 秒，WAV 55,409,734 bytes、MP3 25,130,884 bytes，均通过 FFmpeg 解码。恢复测试保留前两个成功片段，只重做索引 2-11，最终 12/12 成功且文本完整。自动测试为 `19 passed`。
+2026-08-24 已完成真实验收：短试听生成 5.06 秒 WAV；7,000 字任务 `20260824-155344-bcc3e0d8` 完成 50/50 片段、零失败、`text_integrity=true`，最终音频 1,256.456 秒，WAV 55,409,734 bytes、MP3 25,130,884 bytes，均通过 FFmpeg 解码。恢复测试保留前两个成功片段，只重做索引 2-11，最终 12/12 成功且文本完整。GPU 选择器的优先、回退分支及真实 GPU 3 启动均已核验；自动测试为 `20 passed`。
 
 工作台不配置开机自启。交付时服务会停止并释放 GPU；下次通过应用入口或 `./scripts/start.sh` 启动时仍须以实时 `nvidia-smi` 结果选卡。
 

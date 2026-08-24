@@ -2,6 +2,8 @@
 
 一个面向 IndexTTS-2.5 的本地长文本语音工作台：参考音频音色库、自然断句、逐段生成、暂停/继续、失败重试、WAV/MP3 合并和浏览器可视化任务队列集中在一个界面中。
 
+本界面是独立开发的 FastAPI + HTML/CSS/JavaScript 工作台，不是 IndexTTS 官方 Gradio WebUI；语音推理使用官方 IndexTTS-2.5 实现和模型。
+
 本项目只发布工作台代码，不发布 IndexTTS 源码、模型权重、参考录音、用户文稿或生成音频。工作台代码采用 AGPL-3.0；上游实现与模型请阅读 [IndexTTS 官方仓库](https://github.com/index-tts/index-tts) 和 [IndexTTS-2.5 模型卡](https://huggingface.co/IndexTeam/IndexTTS-2.5)。模型使用独立的 Bilibili Model Use License，发布或商用前请阅读上游许可证。
 
 ## 功能
@@ -33,7 +35,7 @@ INDEXTTS_WORKBENCH_FFMPEG=/path/to/ffmpeg \
 PORT=8082 ./scripts/start.sh
 ```
 
-可选项：`MIN_FREE_MIB` 设置启动所需最低空闲显存（默认 8192 MiB）；`INDEXTTS_QWEN_EMO=0` 可关闭文本情绪模型。服务仍只绑定本机回环地址。
+可选项：`MIN_FREE_MIB` 设置启动所需最低空闲显存（默认 8192 MiB）；`PREFERRED_GPU_ID` 设置优先卡（默认 3）；`INDEXTTS_QWEN_EMO=0` 可关闭文本情绪模型。服务仍只绑定本机回环地址。
 
 ## 12 号服务器
 
@@ -41,7 +43,7 @@ PORT=8082 ./scripts/start.sh
 
 在 12 号机远程桌面中，直接点击 Dock 上的“IndexTTS 长音频工作台”，或按 `Super` 搜索同名应用；该入口会检查 GPU、启动服务并打开浏览器，不需要打开终端。
 
-在服务器上启动（脚本会重新查询 GPU，选择空闲显存最多且至少有 8 GiB 的卡）：
+在服务器上启动（脚本会重新查询 GPU；GPU 3 至少有 8 GiB 空闲时优先使用，否则选择满足阈值且空闲显存最多的其他卡）：
 
 ```bash
 cd /data1/ximizhou/indextts-workbench
@@ -74,6 +76,6 @@ node --check app/static/app.js
 
 真实 GPU 试听和 7000 字长文验收应在 12 号机上执行，并在启动前再次检查 `nvidia-smi`。运行数据位于服务器的 `tasks/`、`voices/`、`logs/`、`run/`，均不提交到 Git。
 
-2026-08-24 的真实验收结果：短试听成功；7,000 字任务完成 50/50 片段、零失败、文本完整性为真，最终 1,256.456 秒 WAV/MP3 均通过 FFmpeg 解码；断点恢复仅重做未完成片段。自动测试为 `19 passed`。
+2026-08-24 的真实验收结果：短试听成功；7,000 字任务完成 50/50 片段、零失败、文本完整性为真，最终 1,256.456 秒 WAV/MP3 均通过 FFmpeg 解码；断点恢复仅重做未完成片段。自动测试为 `20 passed`。
 
 更多 HTTP 字段见 [`docs/index-tts-ui-contract.md`](docs/index-tts-ui-contract.md) 和 [`docs/api.md`](docs/api.md)。

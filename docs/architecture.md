@@ -14,7 +14,7 @@ browser / API
     -> transcode final WAV to MP3 with FFmpeg
 ```
 
-The browser is a view and command client. The filesystem-backed manifest is authoritative, so a refresh or service restart reconstructs the job list without relying on JavaScript memory.
+The browser is a custom view and command client, not the upstream official Gradio WebUI. The filesystem-backed manifest is authoritative, so a refresh or service restart reconstructs the job list without relying on JavaScript memory.
 
 ## Components
 

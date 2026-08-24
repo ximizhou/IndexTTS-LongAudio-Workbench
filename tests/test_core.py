@@ -15,6 +15,7 @@ from core.text import join_segments, normalize_text, read_text_file, split_text,
 from core.tts import FakeGenerator, _wav_bytes
 from core.voices import VoiceStore, validate_voice_id
 from scripts.download_hf_range import download
+from scripts.select_gpu import select_gpu
 
 
 @pytest.mark.parametrize(("source", "max_chars"), [("第一句。第二句！第三句？", 5), ("没有标点的中文" * 12, 17), ("# 标题\n\n正文。", 8), ("超长句" * 500, 80)])
@@ -109,6 +110,14 @@ def test_ranged_downloader_resumes_partial_file(tmp_path: Path, monkeypatch: pyt
     download("repo", "model.bin", target, len(payload), hashlib.sha256(payload).hexdigest(), chunk_size=4, retries=1)
     assert target.read_bytes() == payload
     assert ranges == [(6, 9), (10, 13), (14, 15)]
+
+
+def test_gpu_selector_prefers_gpu_three_then_falls_back() -> None:
+    inventory = ["0, 12000", "1, 9000", "2, 48000", "3, 10000"]
+    assert select_gpu(inventory, min_free_mib=8192, preferred_gpu_id=3) == 3
+    busy_preferred = ["0, 12000", "1, 9000", "2, 48000", "3, 7000"]
+    assert select_gpu(busy_preferred, min_free_mib=8192, preferred_gpu_id=3) == 2
+    assert select_gpu(["0, 1000", "3, 7000"], min_free_mib=8192, preferred_gpu_id=3) is None
 
 
 def test_queue_failure_retry_and_resume(tmp_path: Path) -> None:

@@ -8,11 +8,14 @@ UPSTREAM_DIR="${INDEXTTS_SOURCE_DIR:-/data1/ximizhou/indextts}"
 FFMPEG="${INDEXTTS_WORKBENCH_FFMPEG:-/data1/ximizhou/envs/conda/indextts/bin/ffmpeg}"
 PORT="${PORT:-8082}"
 MIN_FREE_MIB="${MIN_FREE_MIB:-8192}"
+PREFERRED_GPU_ID="${PREFERRED_GPU_ID:-3}"
 
 if [[ ! -x "$ENV_PY" ]]; then echo "missing runtime: $ENV_PY" >&2; exit 1; fi
 if [[ ! -d "$MODEL_DIR" || ! -f "$MODEL_DIR/config.yaml" ]]; then echo "missing IndexTTS model: $MODEL_DIR" >&2; exit 1; fi
 if [[ ! -d "$UPSTREAM_DIR/indextts" ]]; then echo "missing IndexTTS source: $UPSTREAM_DIR" >&2; exit 1; fi
 if ! [[ "$PORT" =~ ^[0-9]+$ ]] || (( PORT < 1 || PORT > 65535 )); then echo "invalid PORT: $PORT" >&2; exit 1; fi
+if ! [[ "$MIN_FREE_MIB" =~ ^[0-9]+$ ]]; then echo "invalid MIN_FREE_MIB: $MIN_FREE_MIB" >&2; exit 1; fi
+if ! [[ "$PREFERRED_GPU_ID" =~ ^[0-9]+$ ]]; then echo "invalid PREFERRED_GPU_ID: $PREFERRED_GPU_ID" >&2; exit 1; fi
 
 mkdir -p "$ROOT/logs" "$ROOT/tasks" "$ROOT/voices" "$ROOT/run"
 PID_FILE="$ROOT/run/server.pid"
@@ -21,10 +24,20 @@ if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
   exit 0
 fi
 
-GPU_ID="$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | awk -F, -v min="$MIN_FREE_MIB" 'BEGIN { best=-1; id="" } { g=$1+0; f=$2+0; if (f >= min && f > best) { best=f; id=g } } END { if (id != "") print id }')"
+if ! GPU_ID="$(
+  nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits |
+    "$ENV_PY" "$ROOT/scripts/select_gpu.py" \
+      --min-free-mib "$MIN_FREE_MIB" --preferred-gpu-id "$PREFERRED_GPU_ID"
+)"; then
+  GPU_ID=""
+fi
 if [[ -z "$GPU_ID" ]]; then echo "no GPU has at least ${MIN_FREE_MIB} MiB free" >&2; exit 1; fi
 
-echo "selected GPU $GPU_ID"
+if [[ "$GPU_ID" == "$PREFERRED_GPU_ID" ]]; then
+  echo "selected preferred GPU $GPU_ID"
+else
+  echo "preferred GPU $PREFERRED_GPU_ID unavailable; selected fallback GPU $GPU_ID"
+fi
 cd "$ROOT"
 nohup env CUDA_VISIBLE_DEVICES="$GPU_ID" \
   INDEXTTS_MODEL_DIR="$MODEL_DIR" INDEXTTS_REFERENCE_DIR="${INDEXTTS_REFERENCE_DIR:-$UPSTREAM_DIR/examples}" \

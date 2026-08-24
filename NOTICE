@@ -3,6 +3,7 @@ Copyright (c) 2026 ximizhou
 
 This repository contains only the workbench code. IndexTTS source code and
 model weights are external dependencies and are not redistributed here.
+The workbench UI is independent and is not the official IndexTTS Gradio UI.
 
 Upstream references:
 - IndexTTS source: https://github.com/index-tts/index-tts
