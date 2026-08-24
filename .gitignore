@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local configuration and secrets
+.env
+.env.*
+*.secret
+*.pem
+*.key
+credentials.json
+*_credentials.json
+*.token
+
+# Runtime data: never publish models, user text, audio, logs, or manifests
+data/
+runtime/
+tasks/
+voices/
+logs/
+run/
+models/
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+*.gguf
+*.log
+
+# Browser and OS noise
+.DS_Store
+Thumbs.db

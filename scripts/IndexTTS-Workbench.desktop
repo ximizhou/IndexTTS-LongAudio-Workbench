@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=IndexTTS 长音频工作台
+Comment=启动服务并打开可视化界面
+Exec=/data1/ximizhou/indextts-workbench/scripts/open-webui.sh
+Icon=audio-x-generic
+Terminal=false
+Categories=AudioVideo;Audio;
+StartupNotify=true

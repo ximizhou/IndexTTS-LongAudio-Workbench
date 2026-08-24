@@ -1,0 +1,13 @@
+IndexTTS LongAudio Workbench
+Copyright (c) 2026 ximizhou
+
+This repository contains only the workbench code. IndexTTS source code and
+model weights are external dependencies and are not redistributed here.
+
+Upstream references:
+- IndexTTS source: https://github.com/index-tts/index-tts
+- IndexTTS-2.5 model: https://huggingface.co/IndexTeam/IndexTTS-2.5
+- Upstream model license: https://github.com/index-tts/index-tts/blob/main/LICENSE_ZH.txt
+
+Do not commit model weights, user reference recordings, source text, generated
+audio, credentials, or runtime manifests to this repository.

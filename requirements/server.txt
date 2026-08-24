@@ -1,0 +1,3 @@
+# The 12 server provides the pinned IndexTTS torch/torchaudio environment and
+# ffmpeg. Install this file only for missing workbench web/runtime packages.
+-r base.txt

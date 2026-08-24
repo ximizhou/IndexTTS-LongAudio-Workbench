@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173b4d">
+  <title>IndexTTS LongAudio Workbench</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup"><span class="brand-mark" aria-hidden="true">I</span><div><p class="eyebrow">INDEXTTS LONGAUDIO</p><h1>长音频工作台</h1></div></div>
+      <div class="topbar-meta"><span id="serviceStatus" class="status-dot"><i></i>服务检查中</span><button class="icon-button" id="refreshAll" type="button" title="刷新数据" aria-label="刷新数据">↻</button></div>
+    </header>
+
+    <nav class="workspace-nav" aria-label="工作区" role="tablist">
+      <button class="nav-tab active" data-tab="create" role="tab" aria-selected="true"><span>01</span>创作</button>
+      <button class="nav-tab" data-tab="voices" role="tab" aria-selected="false"><span>02</span>参考音色</button>
+      <button class="nav-tab" data-tab="jobs" role="tab" aria-selected="false"><span>03</span>任务</button>
+    </nav>
+
+    <main>
+      <section class="workspace-panel active" id="panel-create" role="tabpanel">
+        <div class="section-heading"><div><p class="eyebrow">LONG-FORM NARRATION</p><h2>把长文交给稳定的参考音色</h2><p class="section-note">粘贴或导入六七千字文稿，先预览无损切分，再按片段生成并合并音频。</p></div><div class="heading-actions"><label class="file-button" title="读取 TXT 或 Markdown 文件"><span>＋</span>导入文稿<input type="file" id="textFile" accept=".txt,.md,.markdown,text/plain,text/markdown"></label><button class="ghost-button" id="clearText" type="button">清空</button></div></div>
+        <div class="creation-grid">
+          <div class="script-column"><div class="field-header"><label for="scriptInput">原始文稿</label><span id="charCount">0 字</span></div><textarea id="scriptInput" spellcheck="false" placeholder="粘贴中文长文或导入 TXT。段落和标点会被保留，任务会按最大字符数分段。"></textarea><div class="script-footer"><span id="textNotice">等待输入</span><button class="text-button" id="previewSegments" type="button">预览切分 <span>→</span></button></div><div class="segment-preview" id="segmentPreview" hidden><div class="mini-heading"><span>切分预览</span><strong id="segmentSummary"></strong></div><div class="segment-list" id="segmentList"></div></div></div>
+          <aside class="control-column">
+            <div class="control-block voice-block"><div class="block-heading"><span>参考音色</span><button class="text-button" id="openVoices" type="button">管理参考 <span>→</span></button></div><button class="selected-voice" id="selectedVoice" type="button"><span class="voice-avatar" id="selectedVoiceAvatar">I</span><span class="selected-voice-copy"><strong id="selectedVoiceName">选择一个音色</strong><small id="selectedVoiceMeta">打开参考音色库试听或上传</small></span><span class="chevron">›</span></button></div>
+            <div class="control-block"><div class="block-heading"><span>语言与分段</span><span class="hint">IndexTTS</span></div><div class="field-grid two"><label><span>语言</span><select id="lang"><option value="zh">中文</option><option value="en">English</option><option value="ja">日本語</option><option value="es">Español</option><option value="ar">العربية</option></select></label><label><span>段间停顿 <em>ms</em></span><input id="pauseMs" type="number" min="0" max="10000" step="20" value="300"></label></div><div class="range-field"><div><span>每段最大字符</span><output id="maxCharsValue">140</output></div><input id="maxChars" type="range" min="80" max="240" step="10" value="140"></div><div class="range-field"><div><span>模型 token 上限</span><output id="tokenValue">120</output></div><input id="segmentTokens" type="range" min="60" max="220" step="10" value="120"></div></div>
+            <div class="control-block"><div class="block-heading"><span>语速与情绪</span><span class="hint">连续可调</span></div><div class="range-field"><div><span>语速倍率</span><output id="durationValue">1.00×</output></div><input id="durationFactor" type="range" min="0.5" max="2" step="0.05" value="1"></div><div class="range-field"><div><span>情绪权重</span><output id="emotionWeightValue">0.65</output></div><input id="emotionWeight" type="range" min="0" max="1" step="0.05" value="0.65"></div><div class="segmented" role="tablist" aria-label="情绪控制方式"><button class="segment-choice active" data-emotion="voice" type="button">跟随参考音色</button><button class="segment-choice" data-emotion="text" type="button">描述文本</button></div><textarea class="emotion-text" id="emotionText" maxlength="500" placeholder="例如：平静、克制，像纪录片旁白"></textarea><label class="switch-row"><span>情绪采样</span><input id="emotionRandom" type="checkbox"><i></i></label></div>
+            <details class="control-block advanced-block"><summary><span>采样参数</span><span class="hint">高级设置</span></summary><div class="field-grid three"><label><span>Seed</span><input id="seed" type="number" min="1" max="4294967295" step="1" value="42"></label><label><span>Temperature</span><input id="temperature" type="number" min="0.1" max="1.5" step="0.05" value="0.65"></label><label><span>Top P</span><input id="topP" type="number" min="0.1" max="1" step="0.01" value="0.72"></label><label><span>Top K</span><input id="topK" type="number" min="1" max="100" step="1" value="25"></label></div><div class="field-grid two"><label><span>最大 mel token</span><input id="maxMelTokens" type="number" min="500" max="3000" step="50" value="1500"></label><label><span>重复惩罚</span><input id="repetitionPenalty" type="number" min="1" max="20" step="0.5" value="10"></label></div></details>
+          </aside>
+        </div>
+        <div class="creation-bar"><div class="creation-readout"><span class="bar-label">当前参考</span><strong id="barVoiceName">未选择</strong><span class="bar-separator">·</span><span id="barSettings">140 字/段 · 120 token · 1.00×</span></div><div class="creation-actions"><button class="outline-button" id="previewVoice" type="button">参考音色试听</button><button class="primary-button" id="createJob" type="button">创建并开始 <span>→</span></button></div></div><div class="inline-audio" id="voicePreviewBox" hidden><div><span class="eyebrow">AUDITION</span><strong>试听结果</strong></div><audio id="voicePreviewAudio" controls></audio></div>
+      </section>
+
+      <section class="workspace-panel" id="panel-voices" role="tabpanel" hidden>
+        <div class="section-heading"><div><p class="eyebrow">REFERENCE AUDIO LIBRARY</p><h2>参考音色库</h2><p class="section-note">上传清晰、单人的 WAV/MP3/FLAC 参考音频；保存后可在创作页重复调用。</p></div><div class="heading-actions"><button class="outline-button" id="backToCreate" type="button">返回创作</button></div></div>
+        <div class="voice-library-layout"><div class="voice-library-main"><div class="library-toolbar"><div class="filter-tabs"><button class="filter active" data-filter="all" type="button">全部</button><button class="filter" data-filter="female" type="button">偏女声</button><button class="filter" data-filter="male" type="button">偏男声</button><button class="filter" data-filter="saved" type="button">我的收藏</button></div><span id="voiceCount"></span></div><div class="voice-grid" id="voiceGrid"></div></div><aside class="voice-upload-panel"><div class="eyebrow">YOUR REFERENCE</div><h3>添加参考音频</h3><p>选择一段干净、单人的 WAV/MP3/FLAC 录音，保存后可长期调用。</p><label class="upload-drop"><span class="upload-icon">↑</span><strong id="voiceFileLabel">选择音频文件</strong><small>最大 50 MB</small><input type="file" id="voiceFile" accept=".wav,.mp3,.flac,.ogg,.m4a,.aac,audio/*"></label><label class="form-label"><span>名称</span><input id="voiceNameInput" maxlength="40" placeholder="例如：纪录片旁白"></label><label class="form-label"><span>备注</span><textarea id="voiceDescriptionInput" maxlength="160" placeholder="音色特征、适用场景"></textarea></label><button class="primary-button full" id="uploadVoice" type="button">保存到音色库 <span>＋</span></button><div class="upload-status" id="uploadStatus"></div></aside></div>
+      </section>
+
+      <section class="workspace-panel" id="panel-jobs" role="tabpanel" hidden>
+        <div class="section-heading"><div><p class="eyebrow">GENERATION QUEUE</p><h2>任务</h2><p class="section-note">每个片段独立落盘；暂停、继续、取消和失败重试都不会丢失已完成片段。</p></div><div class="heading-actions"><button class="outline-button" id="refreshJobs" type="button">刷新任务</button></div></div>
+        <div class="jobs-layout"><div><div class="list-heading"><span>任务列表</span><strong id="jobListCount"></strong></div><div class="job-list" id="jobList"></div></div><aside class="job-detail" id="jobDetail"><div class="empty-state"><span>03</span><strong>选择一个任务</strong><p>查看片段进度、试听和最终文件。</p></div></aside></div>
+      </section>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
