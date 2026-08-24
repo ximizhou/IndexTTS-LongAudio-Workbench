@@ -4,7 +4,7 @@
 
 ## 启动
 
-远程桌面的便捷入口：点击 Dock 上的“IndexTTS 长音频工作台”，或按 `Super` 搜索同名应用。入口位于 `/home/ximizhou/.local/share/applications/IndexTTS-Workbench.desktop`，会调用 `scripts/open-webui.sh`，自动启动本地服务并打开浏览器；不依赖桌面文件图标。
+远程桌面提供两个入口：点击 Dock 上的“IndexTTS 长音频工作台”使用自定义长文界面；按 `Super` 搜索“IndexTTS 官方 WebUI”使用官方 Gradio 界面。自定义入口位于 `/home/ximizhou/.local/share/applications/IndexTTS-Workbench.desktop`，官方入口位于 `/home/ximizhou/.local/share/applications/IndexTTS-Official-WebUI.desktop`。两者共用模型，启动器会阻止同时运行。
 
 ```bash
 cd /data1/ximizhou/indextts-workbench
@@ -25,6 +25,19 @@ ssh -N -L 8082:127.0.0.1:8082 12
 ```
 
 浏览器打开 `http://127.0.0.1:8082`。不允许绑定 `0.0.0.0` 或创建公网分享链接。
+
+## 官方 WebUI
+
+官方入口运行上游 `/data1/ximizhou/indextts/webui.py`，只监听 `127.0.0.1:7860`：
+
+```bash
+cd /data1/ximizhou/indextts-workbench
+./scripts/start-official-webui.sh
+curl -fsS http://127.0.0.1:7860/ | head
+./scripts/stop-official-webui.sh
+```
+
+本机访问：`ssh -N -L 7860:127.0.0.1:7860 12`，然后打开 `http://127.0.0.1:7860`。启动器默认传入 `--fp16`（IndexTTS-2.5 在当前 GPU 上使用 BF16）；设置 `INDEXTTS_OFFICIAL_FP16=0` 可关闭。官方 WebUI 与自定义工作台不能同时运行；对应日志为 `logs/official-webui.log`，PID 文件为 `run/official-webui.pid`。
 
 ## 停止
 

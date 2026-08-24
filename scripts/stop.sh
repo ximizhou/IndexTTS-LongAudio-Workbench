@@ -3,6 +3,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PID_FILE="$ROOT/run/server.pid"
+OFFICIAL_PID_FILE="$ROOT/run/official-webui.pid"
+if [[ -f "$OFFICIAL_PID_FILE" ]]; then
+  OFFICIAL_PID="$(cat "$OFFICIAL_PID_FILE" 2>/dev/null || true)"
+  if [[ "$OFFICIAL_PID" =~ ^[0-9]+$ ]] && kill -0 "$OFFICIAL_PID" 2>/dev/null; then
+    echo "official IndexTTS WebUI is running (PID $OFFICIAL_PID); stop it before replacing services" >&2
+    exit 1
+  fi
+fi
 if [[ ! -f "$PID_FILE" ]]; then echo "not running"; exit 0; fi
 PID="$(cat "$PID_FILE")"
 if ! [[ "$PID" =~ ^[0-9]+$ ]]; then echo "invalid PID file: $PID_FILE" >&2; exit 1; fi

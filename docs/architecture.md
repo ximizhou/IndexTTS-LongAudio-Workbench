@@ -39,7 +39,7 @@ Restarting the service does not automatically enqueue incomplete jobs. The user 
 
 ## Concurrency boundary
 
-The queue and pause/cancel signals are in-process, while manifests and audio are durable. Run exactly one Uvicorn worker and one Workbench service against a task directory. Multiple processes can race on the same manifest or GPU.
+The queue and pause/cancel signals are in-process, while manifests and audio are durable. Run exactly one Uvicorn worker and one Workbench service against a task directory. The official upstream Gradio service is a separate alternative on port 7860; launchers intentionally refuse to run both services at once because they share the model environment and selected GPU. Multiple processes can race on the same manifest or GPU.
 
 Pause and cancel are cooperative: the current IndexTTS call finishes and is persisted before the worker stops. Retry resets every failed segment to pending and preserves successful segments.
 

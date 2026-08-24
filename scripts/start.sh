@@ -19,9 +19,22 @@ if ! [[ "$PREFERRED_GPU_ID" =~ ^[0-9]+$ ]]; then echo "invalid PREFERRED_GPU_ID:
 
 mkdir -p "$ROOT/logs" "$ROOT/tasks" "$ROOT/voices" "$ROOT/run"
 PID_FILE="$ROOT/run/server.pid"
+OFFICIAL_PID_FILE="$ROOT/run/official-webui.pid"
+if [[ -f "$OFFICIAL_PID_FILE" ]]; then
+  OFFICIAL_PID="$(cat "$OFFICIAL_PID_FILE" 2>/dev/null || true)"
+  if [[ "$OFFICIAL_PID" =~ ^[0-9]+$ ]] && kill -0 "$OFFICIAL_PID" 2>/dev/null; then
+    echo "official IndexTTS WebUI is running (PID $OFFICIAL_PID); stop it before starting the workbench" >&2
+    exit 1
+  fi
+  rm -f -- "$OFFICIAL_PID_FILE"
+fi
 if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
   echo "already running: $(cat "$PID_FILE")"
   exit 0
+fi
+if ss -ltnH 2>/dev/null | grep -Eq ":${PORT}[[:space:]]"; then
+  echo "port $PORT is already listening" >&2
+  exit 1
 fi
 
 if ! GPU_ID="$(

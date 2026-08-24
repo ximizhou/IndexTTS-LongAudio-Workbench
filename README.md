@@ -35,13 +35,13 @@ INDEXTTS_WORKBENCH_FFMPEG=/path/to/ffmpeg \
 PORT=8082 ./scripts/start.sh
 ```
 
-可选项：`MIN_FREE_MIB` 设置启动所需最低空闲显存（默认 8192 MiB）；`PREFERRED_GPU_ID` 设置优先卡（默认 3）；`INDEXTTS_QWEN_EMO=0` 可关闭文本情绪模型。服务仍只绑定本机回环地址。
+可选项：`MIN_FREE_MIB` 设置启动所需最低空闲显存（默认 8192 MiB）；`PREFERRED_GPU_ID` 设置优先卡（默认 3）；`INDEXTTS_QWEN_EMO=0` 可关闭文本情绪模型；官方界面可用 `INDEXTTS_OFFICIAL_FP16=0` 关闭 FP16/BF16。服务仍只绑定本机回环地址。
 
 ## 12 号服务器
 
 部署目录：`/data1/ximizhou/indextts-workbench`；官方源码和模型目录：`/data1/ximizhou/indextts`；环境：`/data1/ximizhou/envs/conda/indextts`。
 
-在 12 号机远程桌面中，直接点击 Dock 上的“IndexTTS 长音频工作台”，或按 `Super` 搜索同名应用；该入口会检查 GPU、启动服务并打开浏览器，不需要打开终端。
+在 12 号机远程桌面中有两个入口：点击 Dock 上的“IndexTTS 长音频工作台”使用自定义长文工作台；按 `Super` 搜索“IndexTTS 官方 WebUI”使用官方 Gradio 界面。两者共用模型，但启动脚本会阻止同时运行，避免抢占同一张 GPU。
 
 在服务器上启动（脚本会重新查询 GPU；GPU 3 至少有 8 GiB 空闲时优先使用，否则选择满足阈值且空闲显存最多的其他卡）：
 
@@ -63,6 +63,15 @@ ssh -N -L 8082:127.0.0.1:8082 12
 cd /data1/ximizhou/indextts-workbench
 ./scripts/stop.sh
 ```
+
+官方 WebUI：
+
+```bash
+cd /data1/ximizhou/indextts-workbench
+./scripts/start-official-webui.sh
+```
+
+官方界面默认只监听 `127.0.0.1:7860`，启动器默认启用官方推荐的 FP16/BF16 低显存模式；本机隧道使用 `ssh -N -L 7860:127.0.0.1:7860 12`，浏览器打开 `http://127.0.0.1:7860`；停止使用 `./scripts/stop-official-webui.sh`。官方入口对应上游 `/data1/ximizhou/indextts/webui.py`，参数和布局由 IndexTTS 官方维护。
 
 脚本不创建开机自启、不开放公网端口。模型首次启动前需已下载到 `/data1/ximizhou/indextts/checkpoints`，辅助模型会由官方工具放在 `checkpoints/hf_cache`。
 
