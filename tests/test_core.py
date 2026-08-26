@@ -73,14 +73,25 @@ def test_srt_uses_real_segment_durations_and_pause(tmp_path: Path) -> None:
     _make_wav(first, 8_000); _make_wav(second, 12_000)
     cues = build_subtitle_cues([("第一句。", first), ("第二句。", second)], pause_ms=300)
     assert [(cue.start_ms, cue.end_ms, cue.text) for cue in cues] == [
-        (0, 1_000, "第一句。"),
-        (1_300, 2_800, "第二句。"),
+        (0, 1_000, "第一句"),
+        (1_300, 2_800, "第二句"),
     ]
     output, cue_count = write_srt_file([("第一句。", first), ("第二句。", second)], tmp_path / "audio.srt", pause_ms=300)
     content = output.read_text(encoding="utf-8-sig")
     assert cue_count == 2
     assert "00:00:00,000 --> 00:00:01,000" in content
     assert "00:00:01,300 --> 00:00:02,800" in content
+
+
+def test_srt_removes_trailing_punctuation_without_orphan_cues(tmp_path: Path) -> None:
+    audio = tmp_path / "segment.wav"
+    _make_wav(audio, 8_000)
+    cues = build_subtitle_cues([("第一句，第二句。", audio)], pause_ms=0, max_chars=4)
+    assert [cue.text for cue in cues] == ["第一句", "第二句"]
+    assert cues[-1].end_ms == 1_000
+
+    orphan = build_subtitle_cues([("测试文本。", audio)], pause_ms=0, max_chars=4)
+    assert [(cue.text, cue.start_ms, cue.end_ms) for cue in orphan] == [("测试文本", 0, 1_000)]
 
 
 def test_wav_bytes_accepts_indextts_tuple() -> None:
@@ -151,6 +162,7 @@ def test_queue_failure_retry_and_resume(tmp_path: Path) -> None:
     assert completed.status == "completed" and all(item.status == "succeeded" for item in completed.segments)
     assert Path(completed.outputs["wav"]).is_file() and Path(completed.outputs["mp3"]).is_file()
     assert Path(completed.outputs["srt"]).is_file() and completed.outputs["subtitle_cues"] >= len(completed.segments)
+    assert completed.outputs["subtitle_version"] == 2
     assert generator.calls.count(0) == 1 and generator.calls.count(1) == 2
 
 

@@ -43,7 +43,7 @@
 | `GET` | `/api/jobs`、`/api/jobs/{job_id}` | 返回任务摘要/manifest；片段状态可为 `pending/running/success/failed/cancelled` |
 | `POST` | `/api/jobs/{job_id}/{start,pause,resume,cancel,retry}` | 返回更新后的任务 manifest |
 | `GET` | `/api/jobs/{job_id}/segments/{index}/audio` | 返回单片段 WAV |
-| `GET` | `/api/jobs/{job_id}/download/{wav,mp3,srt}` | 返回最终合并音频或 UTF-8 SRT 字幕 |
+| `GET` | `/api/jobs/{job_id}/download/{wav,mp3,srt}` | 返回最终合并音频或 UTF-8 SRT 字幕；SRT 每条末尾标点已移除 |
 
 统一接口可增加下列等价路由：`/api/reference-voices`、`/api/reference-voices/upload`、`/api/reference-voices/preview` 和 `/api/reference-voices/{id}`。前端迁移时只需替换路由，不改变 DOM 或参数表。
 

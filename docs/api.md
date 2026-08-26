@@ -21,6 +21,8 @@
 | `GET` | `/api/jobs/{id}/segments/{index}/audio` | 获取片段 WAV |
 | `GET` | `/api/jobs/{id}/download/{wav,mp3,srt}` | 获取最终合并音频或 SRT 字幕 |
 
+SRT 使用 UTF-8 BOM 和 CRLF，保留句内标点并移除每条字幕末尾的连续标点。旧任务保存的早期 SRT 会在下载时按当前格式版本重新生成。
+
 ## 创建任务示例
 
 ```bash

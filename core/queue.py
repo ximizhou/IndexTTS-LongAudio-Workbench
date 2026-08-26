@@ -15,7 +15,7 @@ from typing import Any, Callable, Mapping, Protocol
 
 from .audio import merge_job_audio
 from .manifest import JobManifest, SegmentRecord, utc_now
-from .subtitles import write_srt_file
+from .subtitles import SUBTITLE_FORMAT_VERSION, write_srt_file
 from .tts import IndexTTSGenerator
 
 
@@ -332,6 +332,7 @@ class SequentialJobQueue:
             )
             outputs["srt"] = str(subtitle_path)
             outputs["subtitle_cues"] = cue_count
+            outputs["subtitle_version"] = SUBTITLE_FORMAT_VERSION
             manifest.outputs = outputs
             manifest.set_status("completed")
             self._notify(manifest)

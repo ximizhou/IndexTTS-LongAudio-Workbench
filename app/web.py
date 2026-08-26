@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from core.manifest import JobManifest
 from core.queue import JobStore, SequentialJobQueue
-from core.subtitles import write_srt_file
+from core.subtitles import SUBTITLE_FORMAT_VERSION, write_srt_file
 from core.text import normalize_text, read_text_file, split_text
 from core.tts import FailOnceGenerator, IndexTTSGenerator
 from core.voices import VoiceStore, validate_preview_id, validate_voice_id
@@ -331,10 +331,28 @@ class JobManager:
         if kind not in {"wav", "mp3", "srt"}:
             raise HTTPException(status_code=404, detail="unsupported output")
         manifest = self._load(job_id)
-        if kind == "srt" and not manifest.outputs.get("srt"):
+        if kind == "srt":
+            job_root = self._job_dir(job_id).resolve()
+            existing_value = manifest.outputs.get("srt")
+            existing_path = Path(existing_value) if existing_value else None
+            if existing_path is not None and not existing_path.is_absolute():
+                existing_path = job_root / existing_path
+            existing_is_safe = False
+            if existing_path is not None:
+                try:
+                    existing_path.resolve().relative_to(job_root)
+                    existing_is_safe = existing_path.is_file()
+                except ValueError:
+                    pass
+            needs_regeneration = (
+                manifest.outputs.get("subtitle_version") != SUBTITLE_FORMAT_VERSION
+                or not existing_is_safe
+            )
+        else:
+            needs_regeneration = False
+        if kind == "srt" and needs_regeneration:
             if manifest.status != "completed" or any(segment.status != "succeeded" for segment in manifest.segments):
                 raise HTTPException(status_code=404, detail="final output not ready")
-            job_root = self._job_dir(job_id).resolve()
             subtitle_segments: list[tuple[str, Path]] = []
             for segment in manifest.segments:
                 if not segment.audio_path:
@@ -350,6 +368,7 @@ class JobManager:
             )
             manifest.outputs["srt"] = str(subtitle_path)
             manifest.outputs["subtitle_cues"] = cue_count
+            manifest.outputs["subtitle_version"] = SUBTITLE_FORMAT_VERSION
             self.store.save(manifest)
         value = manifest.outputs.get(kind)
         path = self._job_dir(job_id) / value if value else self._job_dir(job_id) / "output" / f"audio.{kind}"

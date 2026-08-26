@@ -112,12 +112,15 @@ def test_completed_job_downloads_srt_and_backfills_old_output(tmp_path: Path, mo
     subtitle = client.get(f"/api/jobs/{job_id}/download/srt")
     assert subtitle.status_code == 200
     assert "application/x-subrip" in subtitle.headers["content-type"]
-    assert "第一句。第二句。" in subtitle.content.decode("utf-8-sig")
+    assert "第一句。第二句" in subtitle.content.decode("utf-8-sig")
+    assert "第二句。" not in subtitle.content.decode("utf-8-sig")
 
     manifest_path = tmp_path / "tasks" / job_id / "manifest.json"
     payload = __import__("json").loads(manifest_path.read_text(encoding="utf-8"))
-    Path(payload["outputs"].pop("srt")).unlink()
-    payload["outputs"].pop("subtitle_cues", None)
+    Path(payload["outputs"]["srt"]).write_text("legacy subtitle", encoding="utf-8")
+    payload["outputs"].pop("subtitle_version", None)
     manifest_path.write_text(__import__("json").dumps(payload, ensure_ascii=False), encoding="utf-8")
     backfilled = client.get(f"/api/jobs/{job_id}/download/srt")
-    assert backfilled.status_code == 200 and "第一句。第二句。" in backfilled.content.decode("utf-8-sig")
+    assert backfilled.status_code == 200
+    assert "第一句。第二句" in backfilled.content.decode("utf-8-sig")
+    assert "legacy subtitle" not in backfilled.content.decode("utf-8-sig")
