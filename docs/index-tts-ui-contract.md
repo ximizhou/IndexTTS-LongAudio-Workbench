@@ -6,7 +6,7 @@
 
 - **创作**：粘贴或导入 `.txt/.md/.markdown`，显示字符数；调用切分预览接口，展示规范化文本和有序片段；提交长文任务。
 - **参考音色**：通过 `/api/voices` 读取内置/已保存参考音色；上传 WAV、MP3 或 FLAC（前端限制 50 MiB），保存名称和备注；试听并选择音色。
-- **任务**：轮询 `/api/jobs`，查看每个片段的状态、重试次数和进度；片段成功后可单独试听/下载；任务支持开始、暂停、继续、取消、失败重试，并在任务完成后下载 WAV/MP3。
+- **任务**：轮询 `/api/jobs`，查看每个片段的状态、重试次数和进度；片段成功后可单独试听/下载；任务支持开始、暂停、继续、取消、失败重试，并在任务完成后下载 WAV、MP3 和适用于剪映/必剪的 SRT 字幕。
 
 ## 创建/预览参数
 
@@ -43,7 +43,7 @@
 | `GET` | `/api/jobs`、`/api/jobs/{job_id}` | 返回任务摘要/manifest；片段状态可为 `pending/running/success/failed/cancelled` |
 | `POST` | `/api/jobs/{job_id}/{start,pause,resume,cancel,retry}` | 返回更新后的任务 manifest |
 | `GET` | `/api/jobs/{job_id}/segments/{index}/audio` | 返回单片段 WAV |
-| `GET` | `/api/jobs/{job_id}/download/{wav,mp3}` | 返回最终合并文件 |
+| `GET` | `/api/jobs/{job_id}/download/{wav,mp3,srt}` | 返回最终合并音频或 UTF-8 SRT 字幕 |
 
 统一接口可增加下列等价路由：`/api/reference-voices`、`/api/reference-voices/upload`、`/api/reference-voices/preview` 和 `/api/reference-voices/{id}`。前端迁移时只需替换路由，不改变 DOM 或参数表。
 

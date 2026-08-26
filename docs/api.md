@@ -19,7 +19,7 @@
 | `POST` | `/api/jobs/{id}/cancel` | 取消任务 |
 | `POST` | `/api/jobs/{id}/retry` | 重新排队失败片段 |
 | `GET` | `/api/jobs/{id}/segments/{index}/audio` | 获取片段 WAV |
-| `GET` | `/api/jobs/{id}/download/{wav,mp3}` | 获取最终合并文件 |
+| `GET` | `/api/jobs/{id}/download/{wav,mp3,srt}` | 获取最终合并音频或 SRT 字幕 |
 
 ## 创建任务示例
 

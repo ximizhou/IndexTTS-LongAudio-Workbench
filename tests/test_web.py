@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import time
 import wave
 from pathlib import Path
 
@@ -94,3 +95,29 @@ def test_encoded_backslash_cannot_escape_job_root(tmp_path: Path, monkeypatch) -
     client = make_client(tmp_path)
     response = client.get("/api/jobs/..%5Coutside")
     assert response.status_code == 404 and response.json()["detail"] == "invalid job id"
+
+
+def test_completed_job_downloads_srt_and_backfills_old_output(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("INDEXTTS_REFERENCE_DIR", str(_reference_files(tmp_path / "examples")))
+    client = make_client(tmp_path)
+    created = client.post("/api/jobs", json={"text": "第一句。第二句。", "voice_id": "index-example-01", "max_chars": 80}).json()
+    job_id = created["job_id"]
+    assert client.post(f"/api/jobs/{job_id}/start").status_code == 200
+    for _ in range(100):
+        job = client.get(f"/api/jobs/{job_id}").json()
+        if job["status"] == "completed":
+            break
+        time.sleep(0.02)
+    assert job["status"] == "completed"
+    subtitle = client.get(f"/api/jobs/{job_id}/download/srt")
+    assert subtitle.status_code == 200
+    assert "application/x-subrip" in subtitle.headers["content-type"]
+    assert "第一句。第二句。" in subtitle.content.decode("utf-8-sig")
+
+    manifest_path = tmp_path / "tasks" / job_id / "manifest.json"
+    payload = __import__("json").loads(manifest_path.read_text(encoding="utf-8"))
+    Path(payload["outputs"].pop("srt")).unlink()
+    payload["outputs"].pop("subtitle_cues", None)
+    manifest_path.write_text(__import__("json").dumps(payload, ensure_ascii=False), encoding="utf-8")
+    backfilled = client.get(f"/api/jobs/{job_id}/download/srt")
+    assert backfilled.status_code == 200 and "第一句。第二句。" in backfilled.content.decode("utf-8-sig")

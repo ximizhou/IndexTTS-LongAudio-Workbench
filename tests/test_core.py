@@ -11,6 +11,7 @@ import pytest
 from core.audio import inspect_wav, merge_wav_files
 from core.manifest import JobManifest
 from core.queue import JobStore, SequentialJobQueue
+from core.subtitles import build_subtitle_cues, write_srt_file
 from core.text import join_segments, normalize_text, read_text_file, split_text, validate_integrity
 from core.tts import FakeGenerator, _wav_bytes
 from core.voices import VoiceStore, validate_voice_id
@@ -65,6 +66,21 @@ def test_wav_merge_preserves_order_and_pause(tmp_path: Path) -> None:
     info = merge_wav_files([first, second], output, pause_ms=100)
     assert output.is_file() and info.sample_rate == 8_000 and info.frames == 8 + 12 + 800
     assert inspect_wav(output).frames == info.frames
+
+
+def test_srt_uses_real_segment_durations_and_pause(tmp_path: Path) -> None:
+    first, second = tmp_path / "first.wav", tmp_path / "second.wav"
+    _make_wav(first, 8_000); _make_wav(second, 12_000)
+    cues = build_subtitle_cues([("第一句。", first), ("第二句。", second)], pause_ms=300)
+    assert [(cue.start_ms, cue.end_ms, cue.text) for cue in cues] == [
+        (0, 1_000, "第一句。"),
+        (1_300, 2_800, "第二句。"),
+    ]
+    output, cue_count = write_srt_file([("第一句。", first), ("第二句。", second)], tmp_path / "audio.srt", pause_ms=300)
+    content = output.read_text(encoding="utf-8-sig")
+    assert cue_count == 2
+    assert "00:00:00,000 --> 00:00:01,000" in content
+    assert "00:00:01,300 --> 00:00:02,800" in content
 
 
 def test_wav_bytes_accepts_indextts_tuple() -> None:
@@ -134,6 +150,7 @@ def test_queue_failure_retry_and_resume(tmp_path: Path) -> None:
     queue.stop()
     assert completed.status == "completed" and all(item.status == "succeeded" for item in completed.segments)
     assert Path(completed.outputs["wav"]).is_file() and Path(completed.outputs["mp3"]).is_file()
+    assert Path(completed.outputs["srt"]).is_file() and completed.outputs["subtitle_cues"] >= len(completed.segments)
     assert generator.calls.count(0) == 1 and generator.calls.count(1) == 2
 
 

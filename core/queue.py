@@ -15,6 +15,7 @@ from typing import Any, Callable, Mapping, Protocol
 
 from .audio import merge_job_audio
 from .manifest import JobManifest, SegmentRecord, utc_now
+from .subtitles import write_srt_file
 from .tts import IndexTTSGenerator
 
 
@@ -309,7 +310,7 @@ class SequentialJobQueue:
             segment_paths = [paths.root / segment.audio_path for segment in manifest.segments if segment.audio_path]
             # Never expose a stale final file while rebuilding after retry or
             # resume.  Segment files remain available for playback/recovery.
-            for key in ("wav", "mp3"):
+            for key in ("wav", "mp3", "srt"):
                 value = manifest.outputs.get(key)
                 if not value:
                     continue
@@ -323,7 +324,15 @@ class SequentialJobQueue:
                 candidate.unlink(missing_ok=True)
             manifest.outputs = {}
             self._notify(manifest)
-            manifest.outputs = merge_job_audio(segment_paths, paths.output, pause_ms=manifest.pause_ms, ffmpeg=self.ffmpeg, stem="audio")
+            outputs = merge_job_audio(segment_paths, paths.output, pause_ms=manifest.pause_ms, ffmpeg=self.ffmpeg, stem="audio")
+            subtitle_path, cue_count = write_srt_file(
+                [(segment.text, paths.root / segment.audio_path) for segment in manifest.segments if segment.audio_path],
+                paths.output / "audio.srt",
+                pause_ms=manifest.pause_ms,
+            )
+            outputs["srt"] = str(subtitle_path)
+            outputs["subtitle_cues"] = cue_count
+            manifest.outputs = outputs
             manifest.set_status("completed")
             self._notify(manifest)
             logger.event("job_completed", job_id=job_id, outputs=manifest.outputs)

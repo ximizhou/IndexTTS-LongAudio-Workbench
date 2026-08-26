@@ -12,6 +12,7 @@ browser / API
     -> atomically persist each 22.05 kHz WAV segment
     -> concatenate WAV files in manifest order with configured pauses
     -> transcode final WAV to MP3 with FFmpeg
+    -> create UTF-8 SRT cues from measured segment durations and configured pauses
 ```
 
 The browser is a custom view and command client, not the upstream official Gradio WebUI. The filesystem-backed manifest is authoritative, so a refresh or service restart reconstructs the job list without relying on JavaScript memory.
@@ -26,12 +27,13 @@ The browser is a custom view and command client, not the upstream official Gradi
 | `core/tts.py` | Lazy IndexTTS-2.5 adapter, deterministic seed scope and test generator |
 | `core/voices.py` | Official reference-audio presets, user reference library, preview WAV cache and path validation |
 | `core/audio.py` | Validate/merge compatible WAV files and atomically produce MP3 through FFmpeg |
+| `core/subtitles.py` | Split readable cues and atomically create UTF-8-BOM SRT files from measured WAV durations |
 | `app/web.py` | FastAPI projection, validation, downloads and queue commands |
 | `app/static/` | Stateless browser workbench |
 
 ## Persistence and recovery
 
-Each task directory contains its manifest, segment WAV files, final outputs and `job.log.jsonl`. Manifest writes use a temporary file, `fsync`, and atomic replacement. A successful segment is reused only when its referenced audio file still exists; a missing file returns to pending. Final outputs are rebuilt after retry or resume, and stale final files are hidden before rebuilding.
+Each task directory contains its manifest, segment WAV files, final WAV/MP3/SRT outputs and `job.log.jsonl`. Manifest writes use a temporary file, `fsync`, and atomic replacement. A successful segment is reused only when its referenced audio file still exists; a missing file returns to pending. Final outputs are rebuilt after retry or resume, and stale final files are hidden before rebuilding. SRT timing uses each segment WAV's measured duration plus the configured inter-segment pause; shorter cues inside a segment are timed proportionally because IndexTTS does not expose word timestamps.
 
 Reference audio is copied into the ignored `voices/references/` directory for user-saved voices. The manifest stores the selected server-side reference path for resuming, while API projections omit that absolute path. Built-in references are resolved from the official IndexTTS example directory. Voice identity comes from real reference audio rather than a numeric speaker seed.
 

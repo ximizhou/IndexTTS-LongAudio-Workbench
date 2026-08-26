@@ -1,6 +1,6 @@
 # 12 号服务器运行手册
 
-最后核验：2026-08-24。工作台目录为 `/data1/ximizhou/indextts-workbench`，官方 IndexTTS 源码为 `/data1/ximizhou/indextts`，模型为 `/data1/ximizhou/indextts/checkpoints`，环境为 `/data1/ximizhou/envs/conda/indextts`。服务默认只监听 `127.0.0.1:8082`。
+最后核验：2026-08-27。工作台目录为 `/data1/ximizhou/indextts-workbench`，官方 IndexTTS 源码为 `/data1/ximizhou/indextts`，模型为 `/data1/ximizhou/indextts/checkpoints`，环境为 `/data1/ximizhou/envs/conda/indextts`。服务默认只监听 `127.0.0.1:8082`。
 
 ## 启动
 
@@ -66,7 +66,7 @@ curl -fsS http://127.0.0.1:8082/api/voices
 curl -fsS http://127.0.0.1:8082/api/jobs
 ```
 
-2026-08-24 已完成真实验收：短试听生成 5.06 秒 WAV；7,000 字任务 `20260824-155344-bcc3e0d8` 完成 50/50 片段、零失败、`text_integrity=true`，最终音频 1,256.456 秒，WAV 55,409,734 bytes、MP3 25,130,884 bytes，均通过 FFmpeg 解码。恢复测试保留前两个成功片段，只重做索引 2-11，最终 12/12 成功且文本完整。GPU 选择器的优先、回退分支及真实 GPU 3 启动均已核验；自动测试为 `20 passed`。
+2026-08-24 已完成真实验收：短试听生成 5.06 秒 WAV；7,000 字任务 `20260824-155344-bcc3e0d8` 完成 50/50 片段、零失败、`text_integrity=true`，最终音频 1,256.456 秒，WAV 55,409,734 bytes、MP3 25,130,884 bytes，均通过 FFmpeg 解码。恢复测试保留前两个成功片段，只重做索引 2-11，最终 12/12 成功且文本完整。2026-08-27 已验证已有完成任务可补生成 UTF-8-BOM SRT；236 条字幕的结束时间与 913.778 秒 WAV 相差 0.001 秒。GPU 选择器的优先、回退分支及真实 GPU 3 启动均已核验；自动测试为 `22 passed`。
 
 工作台不配置开机自启。交付时服务会停止并释放 GPU；下次通过应用入口或 `./scripts/start.sh` 启动时仍须以实时 `nvidia-smi` 结果选卡。
 

@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from core.manifest import JobManifest
 from core.queue import JobStore, SequentialJobQueue
+from core.subtitles import write_srt_file
 from core.text import normalize_text, read_text_file, split_text
 from core.tts import FailOnceGenerator, IndexTTSGenerator
 from core.voices import VoiceStore, validate_preview_id, validate_voice_id
@@ -327,9 +328,29 @@ class JobManager:
         return path
 
     def output_file(self, job_id: str, kind: str) -> Path:
-        if kind not in {"wav", "mp3"}:
+        if kind not in {"wav", "mp3", "srt"}:
             raise HTTPException(status_code=404, detail="unsupported output")
         manifest = self._load(job_id)
+        if kind == "srt" and not manifest.outputs.get("srt"):
+            if manifest.status != "completed" or any(segment.status != "succeeded" for segment in manifest.segments):
+                raise HTTPException(status_code=404, detail="final output not ready")
+            job_root = self._job_dir(job_id).resolve()
+            subtitle_segments: list[tuple[str, Path]] = []
+            for segment in manifest.segments:
+                if not segment.audio_path:
+                    raise HTTPException(status_code=404, detail="final output not ready")
+                audio_path = (job_root / segment.audio_path).resolve()
+                if job_root not in audio_path.parents or not audio_path.is_file():
+                    raise HTTPException(status_code=404, detail="final output not ready")
+                subtitle_segments.append((segment.text, audio_path))
+            subtitle_path, cue_count = write_srt_file(
+                subtitle_segments,
+                job_root / "output" / "audio.srt",
+                pause_ms=manifest.pause_ms,
+            )
+            manifest.outputs["srt"] = str(subtitle_path)
+            manifest.outputs["subtitle_cues"] = cue_count
+            self.store.save(manifest)
         value = manifest.outputs.get(kind)
         path = self._job_dir(job_id) / value if value else self._job_dir(job_id) / "output" / f"audio.{kind}"
         path = path.resolve()
@@ -466,7 +487,8 @@ def create_app(tasks_dir: str | Path | None = None, *, generator: Any | None = N
     @application.get("/api/jobs/{job_id}/download/{kind}")
     async def download(job_id: str, kind: str) -> FileResponse:
         path = manager.output_file(job_id, kind)
-        return FileResponse(path, media_type="audio/wav" if kind == "wav" else "audio/mpeg", filename=path.name)
+        media_types = {"wav": "audio/wav", "mp3": "audio/mpeg", "srt": "application/x-subrip; charset=utf-8"}
+        return FileResponse(path, media_type=media_types[kind], filename=path.name)
 
     return application
 
